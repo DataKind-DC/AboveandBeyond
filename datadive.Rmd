@@ -1,0 +1,198 @@
+---
+title: "Datadive above and beyond"
+author: "Jen Guo"
+date: "2024-09-21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+library("readxl")
+library("dplyr")
+library("stringr")
+library("lubridate")
+```
+
+
+```{r}
+my_data <- read_excel("Patient Report - Treatment Plan Sample Data.xlsx")
+sample_data <- read_excel("Datakind Sample Data.xlsx")
+```
+
+```{r}
+df_data <- data.frame(my_data)
+ext_intervals <- df_data$Interventions...Frequency.19
+ext_intervals
+```
+
+```{r}
+ext_duraction <- c(ext_intervals)
+times <- str_extract_all(ext_duraction, "\\b(\\d{1,2}:\\d{2}(:\\d{2})? [APM]{2})|\\b\\d{1,2}:\\d{2}\\b")
+print(times)
+
+
+# Extract all time patterns (HH:MM, HH:MM:SS, HH:MM AM/PM)
+#all_times <- str_extract_all(texts, "\\b(\\d{1,2}:\\d{2}(:\\d{2})? [APM]{2})|\\b\\d{1,2}:\\d{2}\\b")
+#print(all_times)
+
+```
+
+```{r}
+# Function to extract and parse dates
+parse_dates_time <- function(text) {
+  date <- str_extract(text, "\\d{4}-\\d{2}-\\d{2}") %>% ymd()
+  if (is.na(date)) {
+    date <- str_extract(text, "\\d{2}/\\d{2}/\\d{4}") %>% dmy()
+  }
+  if (is.na(date)) {
+    date <- str_extract(text, "\\b(\\d{1,2}:\\d{2}(:\\d{2})? [APM]{2})|\\b\\d{1,2}:\\d{2}\\b")
+  }
+  if (is.na(date)) {
+    date <- str_extract(text, "\\b(\\d{1,2}:\\d{1}:\\d{2}(:\\d{2})? [APM]{2})|\\b\\d{1,2}:\\d{2}\\b")
+  }
+  return(date)
+}
+
+# Apply function to all strings
+parsed_dates <- sapply(ext_duraction, parse_dates_time)
+print(parsed_dates)
+
+
+```
+
+```{r}
+# Extract text after "treatment"
+parsed_texts <- str_extract(ext_duraction, "(?i)treatment(.*)")
+print(parsed_texts)
+
+```
+
+```{r}
+# Extract text after "treatment"
+parsed_texts2 <- str_extract(ext_duraction, "(?i)(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)(.*)")
+print(parsed_texts2)
+
+```
+
+
+```{r}
+# Extract text after forms of treatment
+parsed_texts3 <- str_extract(ext_duraction, "(?i)(Yoga|Acupuncture|Spirituality of Imperfection|REBT|IOP/OP|Art Therapy in Recovery|Mindfulness Relapse Prevention|Alone-liness Alleviation)([^.!?]*[.!?])")
+print(parsed_texts3)
+
+```
+```{r}
+parsed_texts3 <- function(texts) {
+  # Regex pattern to match sentences after the word "yoga"
+  pattern <- "(?i)(Yoga|Acupuncture|Spirituality of Imperfection|REBT|IOP/OP|Art Therapy in Recovery|Mindfulness Relapse Prevention|Alone-liness Alleviation|Trauma|Dying to Live|Art Therapy|Family Trauma|Unconditional Self-Acceptance|Improv Therapy Group|Harmony Hope and Healing|RSS Soul Train Group Fun dance|Mindfulness Relapse Prevention)([^.!?]*[.!?])|(\\b\\d+(\\.\\d+)?\\s+hours/week\\b)|(\\d+(\\.\\d+)?tx/wk)"
+  
+  # Extract sentences following different program types
+  extracted_sentences <- str_extract_all(texts, pattern)
+  
+  # Clean up the results by trimming whitespace
+  cleaned_sentences <- lapply(extracted_sentences, function(x) {
+    if (length(x) == 0) return(NA)  # Handle no matches
+    return(trimws(str_remove(x, " ")))
+  })
+  
+  return(cleaned_sentences)
+}
+
+# Example usage
+#texts <- c("Yoga is beneficial for health. I love yoga! It helps with stress.",
+#           "After yoga, I feel great. Yoga classes are amazing.",
+#           "Exercise like yoga can improve flexibility. Remember to breathe.")
+
+# Extract sentences
+result <- parsed_texts3(ext_intervals)
+print(result)
+
+```
+```{r}
+df_result <- data_frame(result)
+df_result
+
+```
+
+```{r}
+parsed_texts4 <- function(texts2) {
+  # Regex pattern to match sentences after the word "yoga"
+   pattern2 <- "(?i)(Yoga|Acupuncture|Spirituality of Imperfection|REBT|IOP/OP|Art Therapy in Recovery|Mindfulness Relapse Prevention|Alone-liness Alleviation|Trauma|Dying to Live|Art Therapy|Family Trauma|Unconditional Self-Acceptance|Improv Therapy Group|Harmony Hope and Healing|RSS Soul Train Group Fun dance|Mindfulness Relapse Prevention)(\\b\\d+(\\.\\d+)?\\s+hours/week\\b)|(\\d+(\\.\\d+)?tx/wk)|(\\b\\d{1,2}-\\d{1,2}:\\d{2}\\s?[Aa][Mm]\\b)"
+  
+  # Extract sentences following different program types
+  extracted_sentences2 <- str_extract_all(texts2, pattern2)
+  
+  # Clean up the results by trimming whitespace
+  cleaned_sentences2 <- lapply(extracted_sentences2, function(x) {
+    if (length(x) == 0) return(NA)  # Handle no matches
+    return(trimws(str_remove(x, " ")))
+  })
+  
+  return(cleaned_sentences2)
+}
+
+# Example usage
+#texts <- c("Yoga is beneficial for health. I love yoga! It helps with stress.",
+#           "After yoga, I feel great. Yoga classes are amazing.",
+#           "Exercise like yoga can improve flexibility. Remember to breathe.")
+
+# Extract sentences
+result2 <- parsed_texts4(ext_intervals)
+print(result2)
+
+```
+
+```{r}
+extract_program <- function(texts) {
+  # Regex pattern to match sentences after the word "yoga"
+   program_pattern <- "(?i)(Yoga|Acupuncture|Spirituality of Imperfection|REBT|IOP/OP|Art Therapy in Recovery|Mindfulness Relapse Prevention|Alone-liness Alleviation|Trauma|Dying to Live|Art Therapy|Family Trauma|Unconditional Self-Acceptance|Improv Therapy Group|Harmony Hope and Healing|RSS Soul Train Group Fun dance|Mindfulness Relapse Prevention)"
+  
+  # Extract sentences following different program types
+  extracted_sentences <- str_extract_all(texts, program_pattern)
+  
+  # Clean up the results by trimming whitespace
+  cleaned_sentences <- lapply(extracted_sentences, function(x) {
+    if (length(x) == 0) return(NA)  # Handle no matches
+    return(trimws(str_remove(x, " ")))
+  })
+  
+  return(cleaned_sentences)
+}
+
+# Example usage
+#texts <- c("Yoga is beneficial for health. I love yoga! It helps with stress.",
+#           "After yoga, I feel great. Yoga classes are amazing.",
+#           "Exercise like yoga can improve flexibility. Remember to breathe.")
+
+# Extract sentences
+result_program <- extract_program(ext_intervals)
+extracted_df <- data.frame(Program_type = unlist(result_program), stringsAsFactors = FALSE)
+print(extracted_df)
+
+```
+
+
+
